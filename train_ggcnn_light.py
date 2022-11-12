@@ -1,29 +1,29 @@
-# import datetime
-# import os
-# import sys
-# import argparse
-# import logging
-#
-# import cv2
-#
-# import torch
-# import torch.utils.data
-# import torch.optim as optim
-#
-# from torchsummary import summary
-#
-# import tensorboardX
-#
-# from utils.visualisation.gridshow import gridshow
-#
-# from utils.dataset_processing import evaluation
-# from utils.data import get_dataset
-# from models import get_network
-# from models.common import post_process_output
-# import os
-# from torch import optim, nn, utils, Tensor
-# from torchvision.datasets import MNIST
-# from torchvision.transforms import ToTensor
+import datetime
+import os
+import sys
+import argparse
+import logging
+
+import cv2
+
+import torch
+import torch.utils.data
+import torch.optim as optim
+
+from torchsummary import summary
+
+import tensorboardX
+
+from utils.visualisation.gridshow import gridshow
+
+from utils.dataset_processing import evaluation
+from utils.data import get_dataset
+from models import get_network
+from models.common import post_process_output
+import os
+from torch import optim, nn, utils, Tensor
+from torchvision.datasets import MNIST
+from torchvision.transforms import ToTensor
 import pytorch_lightning as pl
 # logging.basicConfig(level=logging.INFO)
 
@@ -44,60 +44,27 @@ except ImportError:
 import mlflow.pytorch
 from mlflow import MlflowClient
 
-# For brevity, here is the simplest most minimal example with just a training
-# loop step, (no validation, no testing). It illustrates how you can use MLflow
-# to auto log parameters, metrics, and models.
-
 class GGCNNModel(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, model_name="ggcnn", input_channels=1):
         super().__init__()
-        self.l1 = torch.nn.Linear(28 * 28, 10)
-
-    def forward(self, x):
-        return torch.relu(self.l1(x.view(x.size(0), -1)))
+        self.grasp_model = get_network(model_name)
+        self.net = self.grasp_model(input_channels=input_channels)
 
     def training_step(self, batch, batch_nb):
-        x, y = batch
-        logits = self(x)
-        loss = F.cross_entropy(logits, y)
-        pred = logits.argmax(dim=1)
-        acc = accuracy(pred, y)
-
+        x, y, _, _, _ = batch
+        loss = self.net.compute_loss(x, y)
         # Use the current of PyTorch logger
-        self.log("train_loss", loss, on_epoch=True)
-        self.log("acc", acc, on_epoch=True)
+        self.log("train_loss", loss['loss'], on_epoch=True)
+
         return loss
 
+
+    def validation_step(self, batch, batch_idx):
+        # this is the validation loop
+        x, y, didx, rot, zoom_factor = batch
+        x = x.view(x.size(0), -1)
+        loss = self.net.compute_loss(x, y)
+        self.log("val_loss", loss['loss'])
+
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.02)
-
-def print_auto_logged_info(r):
-
-    tags = {k: v for k, v in r.data.tags.items() if not k.startswith("mlflow.")}
-    artifacts = [f.path for f in MlflowClient().list_artifacts(r.info.run_id, "model")]
-    print("run_id: {}".format(r.info.run_id))
-    print("artifacts: {}".format(artifacts))
-    print("params: {}".format(r.data.params))
-    print("metrics: {}".format(r.data.metrics))
-    print("tags: {}".format(tags))
-
-# Initialize our model
-mnist_model = GGCNNModel()
-
-# Initialize DataLoader from MNIST Dataset
-train_ds = MNIST(os.getcwd(), train=True,
-    download=True, transform=transforms.ToTensor())
-train_loader = DataLoader(train_ds, batch_size=32)
-
-# Initialize a trainer
-trainer = pl.Trainer(max_epochs=2)
-
-# Auto log all MLflow entities
-mlflow.pytorch.autolog()
-
-# Train the model
-with mlflow.start_run() as run:
-    trainer.fit(mnist_model, train_loader)
-
-# fetch the auto logged parameters and metrics
-print_auto_logged_info(mlflow.get_run(run_id=run.info.run_id))
+        return torch.optim.Adam(self.parameters())
