@@ -90,7 +90,7 @@ train_ds = MNIST(os.getcwd(), train=True,
 train_loader = DataLoader(train_ds, batch_size=32)
 
 # Initialize a trainer
-trainer = pl.Trainer(max_epochs=1)
+trainer = pl.Trainer(max_epochs=2)
 
 # Auto log all MLflow entities
 mlflow.pytorch.autolog()
