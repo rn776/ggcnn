@@ -30,8 +30,8 @@ def parse_args():
     parser.add_argument('--network', type=str, default='ggcnn', help='Network Name in .models')
 
     # Dataset & Data & Training
-    parser.add_argument('--dataset', type=str, help='Dataset Name ("cornell" or "jaquard")')
-    parser.add_argument('--dataset-path', type=str, help='Path to dataset')
+    parser.add_argument('--dataset', type=str, default='cornell', help='Dataset Name ("cornell" or "jaquard")')
+    parser.add_argument('--dataset-path', type=str, default='/media/rnath/2f67be5d-bc1a-4dc6-9498-4825808bbabc/cornell_object_wise_25', help='Path to dataset')
     parser.add_argument('--use-depth', type=int, default=1, help='Use Depth image for training (1/0)')
     parser.add_argument('--use-rgb', type=int, default=0, help='Use RGB image for training (0/1)')
     parser.add_argument('--split', type=float, default=0.9, help='Fraction of data for training (remainder is validation)')
