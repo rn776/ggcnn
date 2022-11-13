@@ -11,7 +11,7 @@ class GraspDatasetBase(torch.utils.data.Dataset):
     An abstract dataset for training GG-CNNs in a common format.
     """
     def __init__(self, output_size=300, include_depth=True, include_rgb=False, random_rotate=False,
-                 random_zoom=False, input_only=False):
+                 random_zoom=False, input_only=False, increase_data_length=False, data_length_increase=10000):
         """
         :param output_size: Image output size in pixels (square)
         :param include_depth: Whether depth image is included
@@ -28,6 +28,8 @@ class GraspDatasetBase(torch.utils.data.Dataset):
         self.include_rgb = include_rgb
 
         self.grasp_files = []
+        self.batches_per_epoch = data_length_increase
+        self.change_steps = increase_data_length
 
         if include_depth is False and include_rgb is False:
             raise ValueError('At least one of Depth or RGB must be specified.')
@@ -49,6 +51,11 @@ class GraspDatasetBase(torch.utils.data.Dataset):
         raise NotImplementedError()
 
     def __getitem__(self, idx):
+        if self.change_steps:
+            idx = idx + self.batches_per_epoch
+            if idx >= len(self.grasp_files):
+                idx = idx % len(self.grasp_files)
+
         if self.random_rotate:
             rotations = [0, np.pi/2, 2*np.pi/2, 3*np.pi/2]
             rot = random.choice(rotations)
@@ -95,4 +102,8 @@ class GraspDatasetBase(torch.utils.data.Dataset):
         return x, (pos, cos, sin, width), idx, rot, zoom_factor
 
     def __len__(self):
-        return len(self.grasp_files)
+        if self.change_steps:
+            return self.batches_per_epoch
+        else:
+            return len(self.grasp_files)
+
