@@ -111,10 +111,11 @@ class GGCNNModel(pl.LightningModule):
         self.input_channels = 1*depth + 3*rgb
         self.net = self.grasp_model(input_channels=self.input_channels)
 
-    def training_step(self, batch, batch_nb):
+    def training_step(self, batch, batch_idx):
         x, y, _, _, _ = batch
-        train_loss = self.net.compute_loss(x, y)
-        self.log("train_loss", train_loss['loss'], on_epoch=True)
+        loss = self.net.compute_loss(x, y)
+        train_loss = loss['loss']
+        self.log("train_loss", train_loss, on_epoch=True)
         return train_loss
 
     def validation_step(self, batch, batch_idx):
