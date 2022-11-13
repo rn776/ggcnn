@@ -87,24 +87,16 @@ class GGCNNData(pl.LightningDataModule):
         train_dataset = self.dataset(self.dataset_path, start=0.0, end=self.split, ds_rotate=self.ds_rotate,
                                      random_rotate=True, random_zoom=True,
                                      include_depth=self.use_depth, include_rgb=self.use_rgb)
-        train_data_loader = torch.utils.data.DataLoader(
-            train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers
-        )
+        train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True,
+                                     num_workers=self.num_workers)
         return train_data_loader
 
     def val_dataloader(self):
         val_dataset = self.dataset(self.dataset_path, start=self.split, end=1.0, ds_rotate=self.ds_rotate,
                                    random_rotate=True, random_zoom=True,
                                    include_depth=self.use_depth, include_rgb=self.use_rgb)
-        train_data_loader = torch.utils.data.DataLoader(
-            val_dataset,
-            batch_size=1,
-            shuffle=False,
-            num_workers=self.num_workers
-        )
+        train_data_loader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False,
+                                    num_workers=self.num_workers)
         return train_data_loader
 
 class GGCNNModel(pl.LightningModule):
@@ -121,14 +113,14 @@ class GGCNNModel(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
         x, y, _, _, _ = batch
-        loss = self.net.compute_loss(x, y)
-        self.log("train_loss", loss['loss'], on_epoch=True)
-        return loss
+        train_loss = self.net.compute_loss(x, y)
+        self.log("train_loss", train_loss['loss'], on_epoch=True)
+        return train_loss
 
     def validation_step(self, batch, batch_idx):
         x, y, didx, rot, zoom_factor = batch
-        loss = self.net.compute_loss(x, y)
-        self.log("val_loss", loss['loss'])
+        self.val_loss = self.net.compute_loss(x, y)
+        self.log("val_loss", self.val_loss['loss'])
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x["val_step_loss"] for x in outputs]).mean()
