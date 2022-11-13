@@ -69,6 +69,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 class GGCNNData(pl.LightningDataModule):
     def __init__(self, dataset="cornell", depth=True, rgb=False, dataset_path="",
                  split=0.9, ds_rotate=0.0, num_workers=8, batch_size=8
@@ -113,6 +114,8 @@ class GGCNNModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y, _, _, _ = batch
+        if batch_idx >= self.batches_per_epoch:
+            self.trainer.should_stop = True
         loss = self.net.compute_loss(x, y)
         train_loss = loss['loss']
         self.log("train_loss", train_loss, on_epoch=True)

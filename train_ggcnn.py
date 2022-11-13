@@ -216,7 +216,7 @@ def run():
     val_dataset = Dataset(args.dataset_path, start=args.split, end=1.0, ds_rotate=args.ds_rotate,
                           random_rotate=True, random_zoom=True,
                           include_depth=args.use_depth, include_rgb=args.use_rgb,
-                          increase_data_length=True, data_length_increase=10000)
+                          increase_data_length=True, data_length_increase=args.val_batches)
     val_data = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=1,
